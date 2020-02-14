@@ -1,51 +1,67 @@
-/*
-Copyright © 2020 Daniel Stamer <dan@hello-world.sh>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package cmd
 
 import (
-	"fmt"
+    "bytes"
+    "context"
+    "fmt"
+    "io"
+    "io/ioutil"
+    "time"
 
-	"github.com/spf13/cobra"
+    "cloud.google.com/go/storage"
+    "github.com/spf13/cobra"
+    "github.com/spf13/viper"
+    "github.com/proglottis/gpgme"
 )
+
+var LocalPath string
 
 // putCmd represents the put command
 var putCmd = &cobra.Command{
 	Use:   "put",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Put a local object to remote storage and encrypt it.",
+	Long: `Put a local object to remote storage and encrypt it.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("put called")
+        if len(args) != 1 {
+			fail(fmt.Errorf("no object key specified."))
+        }
+        key := args[0]
+
+        transparentBytes, err := ioutil.ReadFile(LocalPath)
+        if err != nil {
+            fail(fmt.Errorf("failed to read local file: %v", LocalPath))
+        }
+
+        crypto, err := gpgme.New()
+        if err != nil {
+			fail(fmt.Errorf("failed to create crypto client."))
+        }
+
+        crypto.Encrypt() // < continue
+
+        ctx := context.Background()
+        client, err := storage.NewClient(ctx)
+		if err != nil {
+			fail(fmt.Errorf("failed to create storage client."))
+        }
+        bucket := client.Bucket(viper.Get("bucket").(string))
+
+	    ctx, cancel := context.WithTimeout(ctx, time.Second*50)
+        defer cancel()
+
+        reader := bytes.NewReader(transparentBytes) // change
+	    writer := bucket.Object(key).NewWriter(ctx)
+	    if _, err = io.Copy(writer, reader); err != nil {
+	    	fail(fmt.Errorf("failed to copy bytes to remote storage object."))
+	    }
+	    if err := writer.Close(); err != nil {
+	    	fail(fmt.Errorf("failed to close write connection to remote storage."))
+	    }
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(putCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// putCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// putCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	putCmd.Flags().StringVarP(&LocalPath, "file", "f", "", "Local file to read.")
 }
