@@ -33,6 +33,10 @@ var putCmd = &cobra.Command{
 
 
 
+        
+        // Load keyring and encrypt byte array
+        // reference https://snippets.cacher.io/snippet/1e07a360f65bb99ca0c5
+
 
 
 
