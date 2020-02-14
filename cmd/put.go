@@ -11,7 +11,6 @@ import (
     "cloud.google.com/go/storage"
     "github.com/spf13/cobra"
     "github.com/spf13/viper"
-    "github.com/proglottis/gpgme"
 )
 
 var LocalPath string
@@ -32,12 +31,10 @@ var putCmd = &cobra.Command{
             fail(fmt.Errorf("failed to read local file: %v", LocalPath))
         }
 
-        crypto, err := gpgme.New()
-        if err != nil {
-			fail(fmt.Errorf("failed to create crypto client."))
-        }
 
-        crypto.Encrypt() // < continue
+
+
+
 
         ctx := context.Background()
         client, err := storage.NewClient(ctx)
@@ -49,7 +46,7 @@ var putCmd = &cobra.Command{
 	    ctx, cancel := context.WithTimeout(ctx, time.Second*50)
         defer cancel()
 
-        reader := bytes.NewReader(transparentBytes) // change
+        reader := bytes.NewReader(transparentBytes)
 	    writer := bucket.Object(key).NewWriter(ctx)
 	    if _, err = io.Copy(writer, reader); err != nil {
 	    	fail(fmt.Errorf("failed to copy bytes to remote storage object."))
