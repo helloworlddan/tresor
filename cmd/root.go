@@ -2,9 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
-
+    
+	"github.com/spf13/cobra"
+    "golang.org/x/crypto/openpgp"
+    "golang.org/x/crypto/openpgp/armor"
+	"golang.org/x/crypto/openpgp/packet"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
@@ -30,8 +33,6 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
     rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.tresor.yaml)")
-    rootCmd.PersistentFlags().StringP("bucket", "b", "some-bucket", "name of the remote GCS bucket.")
-    rootCmd.PersistentFlags().StringP("project", "p", "project-id", "name of the GCP project.")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -64,3 +65,24 @@ func fail(err error) {
 	fmt.Printf("error: %v\n", err)
 	os.Exit(1)
 }
+
+func loadKey(location string) (key *openpgp.Entity, err error){
+    file, err := os.Open(location)
+    if err != nil {
+        return nil, fmt.Errorf("failed to read key: %v", location)
+    }
+    defer file.Close()
+
+    armored, err := armor.Decode(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode ASCII armor for key: %v", location)
+	}
+
+    entity, err := openpgp.ReadEntity(packet.NewReader(armored.Body))
+    if err != nil {
+        return nil, fmt.Errorf("failed to load key: %v", location)
+    }
+
+    return entity, nil
+}
+
