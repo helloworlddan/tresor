@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -29,6 +30,8 @@ var infoCmd = &cobra.Command{
 
 		fmt.Printf("Name\t\t%v\n", attrs.Name)
 		fmt.Printf("Size\t\t%v bytes\n", attrs.Size)
+		fmt.Printf("MD5\t\t%v\n", hex.EncodeToString(attrs.MD5))
+		fmt.Printf("Type\t\t%v\n", attrs.ContentType)
 		fmt.Printf("Modified\t%v\n", attrs.Updated)
 
 		for k, v := range attrs.Metadata {
