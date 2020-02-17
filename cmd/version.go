@@ -7,13 +7,13 @@ import (
 )
 
 const (
-    version = "0.0.1"
+	version = "0.0.1"
 )
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information.",
-	Long: `Print version information.`,
+	Long:  `Print version information.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Printf("tresor: v%s\n", version)
 	},

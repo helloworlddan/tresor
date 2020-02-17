@@ -3,13 +3,13 @@ package cmd
 import (
 	"fmt"
 	"os"
-    
-	"github.com/spf13/cobra"
-    "golang.org/x/crypto/openpgp"
-    "golang.org/x/crypto/openpgp/armor"
-	"golang.org/x/crypto/openpgp/packet"
-	"github.com/spf13/viper"
+
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
+	"golang.org/x/crypto/openpgp/packet"
 )
 
 var cfgFile string
@@ -17,8 +17,9 @@ var cfgFile string
 var rootCmd = &cobra.Command{
 	Use:   "tresor",
 	Short: "Tresor is a tool to manage asymmetric client-side encryption for GCS.",
-	Long: `Tresor is a tool to manage asymmetric client-side encryption for GCS.`,
+	Long:  `Tresor is a tool to manage asymmetric client-side encryption for GCS.`,
 }
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -27,7 +28,7 @@ func Execute() {
 }
 func init() {
 	cobra.OnInitialize(initConfig)
-    rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.tresor.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.tresor.yaml)")
 }
 func initConfig() {
 	if cfgFile != "" {
@@ -46,29 +47,29 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-        fail(fmt.Errorf("failed to read config: %v", viper.ConfigFileUsed()))
-    }
+		fail(fmt.Errorf("failed to read config: %v", viper.ConfigFileUsed()))
+	}
 }
 func fail(err error) {
 	fmt.Printf("error: %v\n", err)
 	os.Exit(1)
 }
-func loadKey(location string) (key *openpgp.Entity, err error){
-    file, err := os.Open(location)
-    if err != nil {
-        return nil, fmt.Errorf("failed to read key: %v", err)
-    }
-    defer file.Close()
+func loadKey(location string) (key *openpgp.Entity, err error) {
+	file, err := os.Open(location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read key: %v", err)
+	}
+	defer file.Close()
 
-    armored, err := armor.Decode(file)
+	armored, err := armor.Decode(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode ASCII armor for key: %v", err)
 	}
 
-    entity, err := openpgp.ReadEntity(packet.NewReader(armored.Body))
-    if err != nil {
-        return nil, fmt.Errorf("failed to load key: %v", err)
-    }
+	entity, err := openpgp.ReadEntity(packet.NewReader(armored.Body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to load key: %v", err)
+	}
 
-    return entity, nil
+	return entity, nil
 }
