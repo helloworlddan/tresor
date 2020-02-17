@@ -19,13 +19,11 @@ var lsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check for correct number of arguments
 		prefixFilter := ""
-		delimiter := ""
 		if len(args) == 1 {
 			prefixFilter = args[0]
-			delimiter = "/"
 		}
 
-		attrs, err := queryStorage(viper.Get("bucket").(string), prefixFilter, delimiter)
+		attrs, err := queryStorage(viper.Get("bucket").(string), prefixFilter)
 		if err != nil {
 			fail(err)
 		}
@@ -40,7 +38,7 @@ func init() {
 	rootCmd.AddCommand(lsCmd)
 }
 
-func queryStorage(bucketName string, prefixFilter string, delimiter string) (attributes []*storage.ObjectAttrs, err error) {
+func queryStorage(bucketName string, prefixFilter string) (attributes []*storage.ObjectAttrs, err error) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -48,9 +46,10 @@ func queryStorage(bucketName string, prefixFilter string, delimiter string) (att
 	}
 
 	bucket := client.Bucket(bucketName)
-	query := &storage.Query{
-		Prefix:    prefixFilter,
-		Delimiter: delimiter,
+
+	var query *storage.Query
+	if prefixFilter != "" {
+		query = &storage.Query{Prefix: prefixFilter}
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)

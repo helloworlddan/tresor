@@ -27,10 +27,13 @@ var infoCmd = &cobra.Command{
 			fail(err)
 		}
 
-		fmt.Printf("Name\t%v\n", attrs.Name)
-		fmt.Printf("Size\t%v bytes\n", attrs.Size)
-		fmt.Printf("Created\t%v\n", attrs.Created)
-		fmt.Printf("Updated\t%v\n", attrs.Updated)
+		fmt.Printf("Name\t\t%v\n", attrs.Name)
+		fmt.Printf("Size\t\t%v bytes\n", attrs.Size)
+		fmt.Printf("Modified\t%v\n", attrs.Updated)
+
+		for k, v := range attrs.Metadata {
+			fmt.Printf("%v\t%v\n", k, v)
+		}
 	},
 }
 

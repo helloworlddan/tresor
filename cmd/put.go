@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -30,17 +33,17 @@ var putCmd = &cobra.Command{
 		// Read local file
 		plainBytes, err := ioutil.ReadFile(LocalPath)
 		if err != nil {
-			fail(fmt.Errorf("failed to read local file: %v", LocalPath))
+			fail(fmt.Errorf("failed to read local file: %v", err))
 		}
 
 		// Load public keys for encryption
-		recipient, err := loadKey(viper.Get("public_file").(string))
+		recipient, err := loadKey(viper.Get("public_key").(string))
 		if err != nil {
 			fail(err)
 		}
 
 		// Load private key for signature
-		signer, err := loadKey(viper.Get("private_file").(string))
+		signer, err := loadKey(viper.Get("private_key").(string))
 		if err != nil {
 			fail(err)
 		}
@@ -53,6 +56,11 @@ var putCmd = &cobra.Command{
 
 		// Write to storage
 		if err = writeObject(viper.Get("bucket").(string), key, encryptedBytes); err != nil {
+			fail(err)
+		}
+
+		// Write metadata
+		if err = writeMetadata(viper.Get("bucket").(string), key, recipient, signer, filepath.Ext(LocalPath)); err != nil {
 			fail(err)
 		}
 	},
@@ -86,6 +94,33 @@ func writeObject(bucketName string, key string, payload []byte) (err error) {
 	return nil
 }
 
+func writeMetadata(bucketName string, key string, recipient *openpgp.Entity, signer *openpgp.Entity, extension string) (err error) {
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create storage client: %v", err)
+	}
+	bucket := client.Bucket(bucketName)
+	object := bucket.Object(key)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+
+	metadataAttrs := storage.ObjectAttrsToUpdate{
+		ContentType:     "application/pgp-encrypted",
+		ContentEncoding: "",
+		Metadata: map[string]string{
+			"Signing-Key":    strings.ToUpper(strconv.FormatUint(signer.PrimaryKey.KeyId, 16)),
+			"Encryption-Key": strings.ToUpper(strconv.FormatUint(recipient.PrimaryKey.KeyId, 16)),
+			"File-Extension": extension,
+		},
+	}
+
+	if _, err := object.Update(ctx, metadataAttrs); err != nil {
+		return fmt.Errorf("failed to update metadata: %v", err)
+	}
+	return nil
+}
 func encryptBytes(recipient *openpgp.Entity, signer *openpgp.Entity, plainBytes []byte) (encryptedBytes []byte, err error) {
 	recipients := make([]*openpgp.Entity, 1)
 	recipients[0] = recipient

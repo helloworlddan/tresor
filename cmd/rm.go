@@ -21,7 +21,7 @@ var rmCmd = &cobra.Command{
 			fail(fmt.Errorf("no object key specified."))
 		}
 		key := args[0]
-        
+
 		if err := removeObject(viper.Get("bucket").(string), key); err != nil {
 			fail(err)
 		}
