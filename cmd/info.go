@@ -20,24 +20,12 @@ var infoCmd = &cobra.Command{
 		if len(args) != 1 {
 			fail(fmt.Errorf("no object key specified."))
         }
-        
-		ctx := context.Background()
-		client, err := storage.NewClient(ctx)
-		if err != nil {
-			fail(fmt.Errorf("failed to create storage client."))
-        }
-        
         key := args[0]
-        bucket := client.Bucket(viper.Get("bucket").(string))
         
-		ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-        defer cancel()
-
-        object := bucket.Object(key)
-	    attrs, err := object.Attrs(ctx)
-	    if err != nil {
-	    	fail(fmt.Errorf("failed to retrieve object metadata for key: %s", object))
-	    }
+        attrs, err := readMetadata(viper.Get("bucket").(string), key)
+        if err != nil {
+            fail(err)
+        }
 
         fmt.Printf("Name\t%v\n", attrs.Name)
         fmt.Printf("Size\t%v bytes\n", attrs.Size)
@@ -50,3 +38,22 @@ func init() {
 	rootCmd.AddCommand(infoCmd)
 }
 
+func readMetadata(bucketName string, key string) (attributes *storage.ObjectAttrs, err error) {
+    ctx := context.Background()
+    client, err := storage.NewClient(ctx)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create storage client: %v", err)
+    }
+    
+    bucket := client.Bucket(bucketName)
+    
+    ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+    defer cancel()
+
+    object := bucket.Object(key)
+    attrs, err := object.Attrs(ctx)
+    if err != nil {
+        return nil, fmt.Errorf("failed to retrieve object metadata: %v", err)
+    }
+    return attrs, err
+}

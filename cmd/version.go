@@ -10,7 +10,6 @@ const (
     version = "0.0.1"
 )
 
-// versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information.",

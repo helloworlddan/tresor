@@ -67,7 +67,7 @@ func writeObject(bucketName string, key string, payload []byte) (err error){
     ctx := context.Background()
     client, err := storage.NewClient(ctx)
     if err != nil {
-        fail(fmt.Errorf("failed to create storage client."))
+        fail(fmt.Errorf("failed to create storage client: %v", err))
     }
     bucket := client.Bucket(bucketName)
     
@@ -77,10 +77,10 @@ func writeObject(bucketName string, key string, payload []byte) (err error){
     reader := bytes.NewReader(payload)
     writer := bucket.Object(key).NewWriter(ctx)
     if _, err = io.Copy(writer, reader); err != nil {
-        return fmt.Errorf("failed to copy bytes to remote storage object.")
+        return fmt.Errorf("failed to copy bytes to remote storage object: %v", err)
     }
     if err := writer.Close(); err != nil {
-        return fmt.Errorf("failed to close write connection to remote storage.")
+        return fmt.Errorf("failed to close write connection to remote storage: %v", err)
     }
 
     return nil
@@ -93,14 +93,13 @@ func encryptBytes(recipient *openpgp.Entity, signer *openpgp.Entity, plainBytes 
     cryptoBuffer := new(bytes.Buffer)
     cryptoWriter, err := openpgp.Encrypt(cryptoBuffer, recipients, nil, nil, nil)
     if err != nil {
-        return nil, fmt.Errorf("failed to close stream writer.")
+        return nil, fmt.Errorf("failed to open stream writer: %v", err)
     }
-
     if _, err = cryptoWriter.Write(plainBytes); err != nil {
-        return nil, fmt.Errorf("failed to close stream writer.")
+        return nil, fmt.Errorf("failed to write stream: %v", err)
     }
     if err = cryptoWriter.Close(); err != nil {
-        return nil, fmt.Errorf("failed to close stream writer.")
+        return nil, fmt.Errorf("failed to close stream writer: %v", err)
     }
     return cryptoBuffer.Bytes(), nil
 }
