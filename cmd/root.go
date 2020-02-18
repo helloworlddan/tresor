@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -50,26 +51,34 @@ func initConfig() {
 		fail(fmt.Errorf("failed to read config: %v", viper.ConfigFileUsed()))
 	}
 }
+
 func fail(err error) {
 	fmt.Printf("error: %v\n", err)
 	os.Exit(1)
 }
-func loadKey(location string) (key *openpgp.Entity, err error) {
+
+func loadKeyring(location string) (ring openpgp.EntityList, err error) {
 	file, err := os.Open(location)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read key: %v", err)
+		return nil, fmt.Errorf("failed to read keyring: %v", err)
 	}
 	defer file.Close()
 
-	armored, err := armor.Decode(file)
+	list, err := openpgp.ReadKeyRing(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode ASCII armor for key: %v", err)
+		return nil, fmt.Errorf("failed to load keyring: %v", err)
 	}
 
-	entity, err := openpgp.ReadEntity(packet.NewReader(armored.Body))
-	if err != nil {
-		return nil, fmt.Errorf("failed to load key: %v", err)
-	}
+	return list, nil
+}
 
-	return entity, nil
+func getKey(ring openpgp.EntityList, identity string) (key *openpgp.Entity, err error) {
+	for _, v := range ring {
+		for k, _ := range v.Identities {
+			if strings.Contains(k, identity) {
+				return v, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("identity not found in keyring.")
 }

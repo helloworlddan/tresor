@@ -1,47 +1,39 @@
 package cmd
 
 import (
-    "context"
-    "fmt"
-    "io/ioutil"
-    "time"
+	"context"
+	"fmt"
+	"io/ioutil"
+	"time"
 
-    "cloud.google.com/go/storage"
-    "github.com/spf13/cobra"
-    "github.com/spf13/viper"
+	"cloud.google.com/go/storage"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get a remote object from storage and decrypt it.",
-	Long: `Get a remote object from storage and decrypt it.`,
+	Long:  `Get a remote object from storage and decrypt it.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check for correct number of arguments
 		if len(args) != 1 {
 			fail(fmt.Errorf("no object key specified."))
 		}
-		key := args[0]
-        
-        // Load public key for signature verification
-        _, err := loadKey(viper.Get("public_key").(string))
-        if err != nil {
-            fail(err)
-        }
+		//key := args[0]
 
-        // Load private key for decryption
-        _, err = loadKey(viper.Get("private_key").(string))
-        if err != nil {
-            fail(err)
-        }
-
-		// Read remote object
-        _, err = readObject(viper.Get("bucket").(string), key)
+		_, err := loadKeyring(viper.Get("keyring").(string))
 		if err != nil {
-			fail(fmt.Errorf("failed to read remote object: %v", err))
-        }
+			fail(err)
+		}
 
-        
-        // TODO continue with metadata download, signature verification, payload decryption and output
+		// // Read remote object
+		// _, err = readObject(viper.Get("bucket").(string), key)
+		// if err != nil {
+		// 	fail(fmt.Errorf("failed to read remote object: %v", err))
+		// }
+
+		// TODO continue with metadata download, signature verification, payload decryption and output
 	},
 }
 
@@ -63,14 +55,14 @@ func readObject(bucketName string, key string) (payload []byte, err error) {
 
 	object := bucket.Object(key)
 	reader, err := object.NewReader(ctx)
-    if err != nil {
-        return nil, err
-    }
-    defer reader.Close()
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
 
-    data, err := ioutil.ReadAll(reader)
-    if err != nil {
-        return nil, err
-    }
-    return data, nil
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

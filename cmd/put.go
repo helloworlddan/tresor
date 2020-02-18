@@ -36,17 +36,20 @@ var putCmd = &cobra.Command{
 			fail(fmt.Errorf("failed to read local file: %v", err))
 		}
 
-		// Load public key for encryption
-		recipient, err := loadKey(viper.Get("public_key").(string))
+		// Load key ring
+		ring, err := loadKeyring(viper.Get("keyring").(string))
 		if err != nil {
 			fail(err)
 		}
 
-		// Load private key for signature
-		signer, err := loadKey(viper.Get("private_key").(string))
+		// Load key
+		recipient, err := getKey(ring, viper.Get("identity").(string))
 		if err != nil {
 			fail(err)
 		}
+
+		// Signer is recipient
+		signer := recipient
 
 		// Encrypt and sign
 		encryptedBytes, err := encryptBytes(recipient, signer, plainBytes)
