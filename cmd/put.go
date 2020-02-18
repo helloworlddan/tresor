@@ -36,7 +36,7 @@ var putCmd = &cobra.Command{
 			fail(fmt.Errorf("failed to read local file: %v", err))
 		}
 
-		// Load public keys for encryption
+		// Load public key for encryption
 		recipient, err := loadKey(viper.Get("public_key").(string))
 		if err != nil {
 			fail(err)
@@ -121,6 +121,7 @@ func writeMetadata(bucketName string, key string, recipient *openpgp.Entity, sig
 	}
 	return nil
 }
+
 func encryptBytes(recipient *openpgp.Entity, signer *openpgp.Entity, plainBytes []byte) (encryptedBytes []byte, err error) {
 	recipients := make([]*openpgp.Entity, 1)
 	recipients[0] = recipient
