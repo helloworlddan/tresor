@@ -50,6 +50,6 @@ func initConfig() {
 }
 
 func fail(err error) {
-	fmt.Printf("error: %v\n", err)
+	fmt.Fprintf(os.Stderr, "%v\n", err)
 	os.Exit(1)
 }

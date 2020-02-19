@@ -4,11 +4,11 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	tresor "github.com/helloworlddan/tresor/lib"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-// infoCmd represents the info command
 var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Get info on remote objects.",
@@ -20,7 +20,7 @@ var infoCmd = &cobra.Command{
 		}
 		key := args[0]
 
-		attrs, err := readMetadata(viper.Get("bucket").(string), key)
+		attrs, err := tresor.ReadMetadata(viper.Get("bucket").(string), key)
 		if err != nil {
 			fail(err)
 		}
