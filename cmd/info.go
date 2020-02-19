@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"context"
 	"encoding/hex"
 	"fmt"
-	"time"
 
-	"cloud.google.com/go/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -42,24 +39,4 @@ var infoCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(infoCmd)
-}
-
-func readMetadata(bucketName string, key string) (attributes *storage.ObjectAttrs, err error) {
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create storage client: %v", err)
-	}
-
-	bucket := client.Bucket(bucketName)
-
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
-
-	object := bucket.Object(key)
-	attrs, err := object.Attrs(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve object metadata: %v", err)
-	}
-	return attrs, err
 }

@@ -17,7 +17,7 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
-var localPath string
+var localReadPath string
 
 // putCmd represents the put command
 var putCmd = &cobra.Command{
@@ -31,25 +31,31 @@ var putCmd = &cobra.Command{
 		key := args[0]
 
 		// Read local file
-		plainBytes, err := ioutil.ReadFile(localPath)
-		if err != nil {
-			fail(fmt.Errorf("failed to read local file: %v", err))
-		}
-
-		// Load key ring
-		ring, err := loadKeyring(viper.Get("keyring").(string))
+		plainBytes, err := ioutil.ReadFile(localReadPath)
 		if err != nil {
 			fail(err)
 		}
 
-		// Load key
-		recipient, err := getKey(ring, viper.Get("identity").(string))
+		// Load keys
+		recipient, err := loadArmoredKey(viper.Get("public_key").(string))
 		if err != nil {
 			fail(err)
 		}
 
-		// Signer is recipient
-		signer := recipient
+		// Load private keys for signature
+		signer, err := loadArmoredKey(viper.Get("private_key").(string))
+		if err != nil {
+			fail(err)
+		}
+
+		// Get password
+		password, err := callbackForPassword([]openpgp.Key{}, false)
+		if err != nil {
+			fail(err)
+		}
+
+		// Decrypt private key
+		signer.PrivateKey.Decrypt(password)
 
 		// Encrypt and sign
 		encryptedBytes, err := encryptBytes(recipient, signer, plainBytes)
@@ -63,7 +69,7 @@ var putCmd = &cobra.Command{
 		}
 
 		// Write metadata
-		if err = writeMetadata(viper.Get("bucket").(string), key, recipient, signer, filepath.Ext(localPath)); err != nil {
+		if err = writeMetadata(viper.Get("bucket").(string), key, recipient, signer, filepath.Ext(localReadPath)); err != nil {
 			fail(err)
 		}
 	},
@@ -71,7 +77,7 @@ var putCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(putCmd)
-	putCmd.Flags().StringVarP(&localPath, "file", "f", "", "Local file to read.")
+	putCmd.Flags().StringVarP(&localReadPath, "in", "i", "", "Input file to read from.")
 }
 
 func writeObject(bucketName string, key string, payload []byte) (err error) {
@@ -114,9 +120,7 @@ func writeMetadata(bucketName string, key string, recipient *openpgp.Entity, sig
 		ContentEncoding: "",
 		Metadata: map[string]string{
 			"Signing-Key":    strings.ToUpper(strconv.FormatUint(signer.PrimaryKey.KeyId, 16)),
-			"Signer-ID":      viper.Get("identity").(string),
 			"Encryption-Key": strings.ToUpper(strconv.FormatUint(recipient.PrimaryKey.KeyId, 16)),
-			"Recipient-ID":   viper.Get("identity").(string),
 			"File-Extension": extension,
 		},
 	}
@@ -132,7 +136,7 @@ func encryptBytes(recipient *openpgp.Entity, signer *openpgp.Entity, plainBytes 
 	recipients[0] = recipient
 
 	cryptoBuffer := new(bytes.Buffer)
-	cryptoWriter, err := openpgp.Encrypt(cryptoBuffer, recipients, nil, nil, nil)
+	cryptoWriter, err := openpgp.Encrypt(cryptoBuffer, recipients, signer, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open stream writer: %v", err)
 	}

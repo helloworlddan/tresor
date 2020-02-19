@@ -5,15 +5,15 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"syscall"
 	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/ssh/terminal"
 )
+
+var localWritePath string
 
 var getCmd = &cobra.Command{
 	Use:   "get",
@@ -26,7 +26,7 @@ var getCmd = &cobra.Command{
 		}
 		key := args[0]
 
-		ring, err := loadKeyring(viper.Get("keyring").(string))
+		recipient, err := loadArmoredKey(viper.Get("private_key").(string))
 		if err != nil {
 			fail(err)
 		}
@@ -34,23 +34,29 @@ var getCmd = &cobra.Command{
 		// Read remote object
 		encryptedBytes, err := readObject(viper.Get("bucket").(string), key)
 		if err != nil {
-			fail(fmt.Errorf("failed to read remote object: %v", err))
+			fail(err)
 		}
 
 		// Decrypt data
-		plainBytes, err := decryptBytes(ring, encryptedBytes)
+		plainBytes, err := decryptBytes(openpgp.EntityList{recipient}, encryptedBytes)
 		if err != nil {
-			fail(fmt.Errorf("failed to decrypt data: %v", err))
+			fail(err)
 		}
 
-		fmt.Printf("read message: %s", string(plainBytes))
+		if localWritePath == "" {
+			fmt.Printf("%s\n", string(plainBytes))
+			return
+		}
 
-		// TODO continue with metadata download, signature verification, payload decryption and output
+		if err = ioutil.WriteFile(localWritePath, plainBytes, 0644); err != nil {
+			fail(err)
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(getCmd)
+	getCmd.Flags().StringVarP(&localWritePath, "out", "o", "", "Output file to write to.")
 }
 
 func readObject(bucketName string, key string) (payload []byte, err error) {
@@ -84,21 +90,15 @@ func decryptBytes(ring openpgp.EntityList, payload []byte) (plain []byte, err er
 	if err != nil {
 		return nil, fmt.Errorf("failed to read gpg message: %v", err)
 	}
-	// TODO verify
 
 	bytes, err := ioutil.ReadAll(message.UnverifiedBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read gpg data: %v", err)
 	}
-	return bytes, nil
-}
 
-func callbackForPassword(keys []openpgp.Key, symmetric bool) ([]byte, error) {
-	fmt.Print("Enter Password: ")
-	bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
-	fmt.Println()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user password: %v", err)
+	if message.SignatureError != nil {
+		return nil, message.SignatureError
 	}
-	return bytePassword, nil
+
+	return bytes, nil
 }
