@@ -34,22 +34,22 @@ var putCmd = &cobra.Command{
 		plainBytes, err := ioutil.ReadFile(LocalPath)
 		if err != nil {
 			fail(fmt.Errorf("failed to read local file: %v", err))
-        }
+		}
 
 		// Load key ring
 		ring, err := loadKeyring(viper.Get("keyring").(string))
 		if err != nil {
 			fail(err)
 		}
-        
-        // Load key
+
+		// Load key
 		recipient, err := getKey(ring, viper.Get("identity").(string))
 		if err != nil {
 			fail(err)
-        }
-        
-        // Signer is recipient
-        signer := recipient
+		}
+
+		// Signer is recipient
+		signer := recipient
 
 		// Encrypt and sign
 		encryptedBytes, err := encryptBytes(recipient, signer, plainBytes)
@@ -113,10 +113,10 @@ func writeMetadata(bucketName string, key string, recipient *openpgp.Entity, sig
 		ContentType:     "application/pgp-encrypted",
 		ContentEncoding: "",
 		Metadata: map[string]string{
-            "Signing-Key":    strings.ToUpper(strconv.FormatUint(signer.PrimaryKey.KeyId, 16)),
-            "Signer-ID":      viper.Get("identity").(string),
-            "Encryption-Key": strings.ToUpper(strconv.FormatUint(recipient.PrimaryKey.KeyId, 16)),
-            "Recipient-ID":   viper.Get("identity").(string),
+			"Signing-Key":    strings.ToUpper(strconv.FormatUint(signer.PrimaryKey.KeyId, 16)),
+			"Signer-ID":      viper.Get("identity").(string),
+			"Encryption-Key": strings.ToUpper(strconv.FormatUint(recipient.PrimaryKey.KeyId, 16)),
+			"Recipient-ID":   viper.Get("identity").(string),
 			"File-Extension": extension,
 		},
 	}
