@@ -17,7 +17,7 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
-var LocalPath string
+var localPath string
 
 // putCmd represents the put command
 var putCmd = &cobra.Command{
@@ -26,12 +26,12 @@ var putCmd = &cobra.Command{
 	Long:  `Encrypt a local object and put it to remote storage.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
-			fail(fmt.Errorf("no object key specified."))
+			fail(fmt.Errorf("no object key specified"))
 		}
 		key := args[0]
 
 		// Read local file
-		plainBytes, err := ioutil.ReadFile(LocalPath)
+		plainBytes, err := ioutil.ReadFile(localPath)
 		if err != nil {
 			fail(fmt.Errorf("failed to read local file: %v", err))
 		}
@@ -63,7 +63,7 @@ var putCmd = &cobra.Command{
 		}
 
 		// Write metadata
-		if err = writeMetadata(viper.Get("bucket").(string), key, recipient, signer, filepath.Ext(LocalPath)); err != nil {
+		if err = writeMetadata(viper.Get("bucket").(string), key, recipient, signer, filepath.Ext(localPath)); err != nil {
 			fail(err)
 		}
 	},
@@ -71,7 +71,7 @@ var putCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(putCmd)
-	putCmd.Flags().StringVarP(&LocalPath, "file", "f", "", "Local file to read.")
+	putCmd.Flags().StringVarP(&localPath, "file", "f", "", "Local file to read.")
 }
 
 func writeObject(bucketName string, key string, payload []byte) (err error) {

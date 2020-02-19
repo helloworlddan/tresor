@@ -19,6 +19,7 @@ var rootCmd = &cobra.Command{
 	Long:  `Tresor is a tool to manage asymmetric client-side encryption for GCS.`,
 }
 
+// Execute for root CMD
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -72,11 +73,11 @@ func loadKeyring(location string) (ring openpgp.EntityList, err error) {
 
 func getKey(ring openpgp.EntityList, identity string) (key *openpgp.Entity, err error) {
 	for _, v := range ring {
-		for k, _ := range v.Identities {
+		for k := range v.Identities {
 			if strings.Contains(k, identity) {
 				return v, nil
 			}
 		}
 	}
-	return nil, fmt.Errorf("identity not found in keyring.")
+	return nil, fmt.Errorf("identity not found in keyring")
 }

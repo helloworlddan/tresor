@@ -18,7 +18,7 @@ var rmCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check for correct number of arguments
 		if len(args) != 1 {
-			fail(fmt.Errorf("no object key specified."))
+			fail(fmt.Errorf("no object key specified"))
 		}
 		key := args[0]
 
