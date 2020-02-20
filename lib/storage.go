@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -120,7 +121,7 @@ func WriteObject(bucketName string, key string, payload []byte) (err error) {
 }
 
 // WriteMetadata writes a set of tags on a remote object
-func WriteMetadata(bucketName string, key string, recipient *openpgp.Entity, signer *openpgp.Entity, extension string) (err error) {
+func WriteMetadata(bucketName string, key string, recipient *openpgp.Entity, signer *openpgp.Entity, extension string, armored bool) (err error) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -139,6 +140,7 @@ func WriteMetadata(bucketName string, key string, recipient *openpgp.Entity, sig
 			"Signing-Key":    signer.PrimaryKey.KeyIdString(),
 			"Encryption-Key": recipient.PrimaryKey.KeyIdString(),
 			"File-Extension": extension,
+			"ASCII-Armor":    strconv.FormatBool(armored),
 		},
 	}
 

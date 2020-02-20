@@ -10,8 +10,8 @@ import (
 
 var rmCmd = &cobra.Command{
 	Use:   "rm",
-	Short: "Remove a remote objects.",
-	Long:  `Remove a remote objects.`,
+	Short: "Remove a remote object.",
+	Long:  `Remove a remote object.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check for correct number of arguments
 		if len(args) != 1 {

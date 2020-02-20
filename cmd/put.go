@@ -50,7 +50,7 @@ var putCmd = &cobra.Command{
 		signer.PrivateKey.Decrypt(password)
 
 		// Encrypt and sign
-		encryptedBytes, err := tresor.EncryptBytes(recipient, signer, plainBytes)
+		encryptedBytes, err := tresor.EncryptBytes(recipient, signer, plainBytes, viper.Get("ascii_armor").(bool))
 		if err != nil {
 			fail(err)
 		}
@@ -61,7 +61,7 @@ var putCmd = &cobra.Command{
 		}
 
 		// Write metadata
-		if err = tresor.WriteMetadata(viper.Get("bucket").(string), key, recipient, signer, filepath.Ext(localReadPath)); err != nil {
+		if err = tresor.WriteMetadata(viper.Get("bucket").(string), key, recipient, signer, filepath.Ext(localReadPath), viper.Get("ascii_armor").(bool)); err != nil {
 			fail(err)
 		}
 	},
