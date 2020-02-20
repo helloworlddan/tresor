@@ -8,6 +8,7 @@ import (
 	tresor "github.com/helloworlddan/tresor/lib"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/crypto/openpgp"
 )
 
 var localReadPath string
@@ -34,20 +35,23 @@ var putCmd = &cobra.Command{
 			fail(err)
 		}
 
-		// Load private keys for signature
-		signer, err := tresor.LoadArmoredKey(viper.Get("private_key").(string))
-		if err != nil {
-			fail(err)
-		}
+		var signer *openpgp.Entity
 
-		// Get password
-		password, err := tresor.GetUserPassword(signer.PrivateKey.KeyIdString())
-		if err != nil {
-			fail(err)
+		// Sign object if configured
+		if viper.Get("object_signing").(bool) {
+			// Load private keys for signature
+			signer, err := tresor.LoadArmoredKey(viper.Get("private_key").(string))
+			if err != nil {
+				fail(err)
+			}
+			// Get password
+			password, err := tresor.GetUserPassword(signer.PrivateKey.KeyIdString())
+			if err != nil {
+				fail(err)
+			}
+			// Decrypt private key
+			signer.PrivateKey.Decrypt(password)
 		}
-
-		// Decrypt private key
-		signer.PrivateKey.Decrypt(password)
 
 		// Encrypt and sign
 		encryptedBytes, err := tresor.EncryptBytes(recipient, signer, plainBytes, viper.Get("ascii_armor").(bool))

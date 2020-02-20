@@ -14,6 +14,10 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+const (
+	emptyMetadata = "null"
+)
+
 // QueryStorage queries the remote storage to find keys
 func QueryStorage(bucketName string, prefixFilter string) (attributes []*storage.ObjectAttrs, err error) {
 	ctx := context.Background()
@@ -133,11 +137,21 @@ func WriteMetadata(bucketName string, key string, recipient *openpgp.Entity, sig
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
+	signingKey := emptyMetadata
+
+	if signer != nil {
+		signingKey = signer.PrimaryKey.KeyIdString()
+	}
+
+	if extension == "" {
+		extension = emptyMetadata
+	}
+
 	metadataAttrs := storage.ObjectAttrsToUpdate{
 		ContentType:     "application/pgp-encrypted",
 		ContentEncoding: "",
 		Metadata: map[string]string{
-			"Signing-Key":    signer.PrimaryKey.KeyIdString(),
+			"Signing-Key":    signingKey,
 			"Encryption-Key": recipient.PrimaryKey.KeyIdString(),
 			"File-Extension": extension,
 			"ASCII-Armor":    strconv.FormatBool(armored),

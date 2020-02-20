@@ -61,6 +61,7 @@ func GetUserPassword(keyID string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user password: %v", err)
 	}
+
 	return passwordBytes, nil
 }
 
