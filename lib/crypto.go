@@ -67,60 +67,77 @@ func GetUserPassword(keyID string) ([]byte, error) {
 
 // EncryptBytes encrypts and signs a byte sequence
 func EncryptBytes(recipient *openpgp.Entity, signer *openpgp.Entity, plainBytes []byte, armored bool) (encryptedBytes []byte, err error) {
+	if armored {
+		return encryptArmored(recipient, signer, plainBytes)
+	}
+	return encryptBinary(recipient, signer, plainBytes)
+}
+
+func encryptBinary(recipient *openpgp.Entity, signer *openpgp.Entity, plainBytes []byte) ([]byte, error) {
 	recipients := make([]*openpgp.Entity, 1)
 	recipients[0] = recipient
 
 	cryptoBuffer := bytes.NewBuffer(nil)
 
-	var cryptoWriter io.WriteCloser
+	cryptoWriter, err := openpgp.Encrypt(cryptoBuffer, recipients, signer, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open stream writer: %v", err)
+	}
+	if _, err = cryptoWriter.Write(plainBytes); err != nil {
+		return nil, fmt.Errorf("failed to write stream: %v", err)
+	}
+	if err = cryptoWriter.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close stream: %v", err)
+	}
+	return cryptoBuffer.Bytes(), nil
+}
+
+func encryptArmored(recipient *openpgp.Entity, signer *openpgp.Entity, plainBytes []byte) ([]byte, error) {
+	recipients := make([]*openpgp.Entity, 1)
+	recipients[0] = recipient
+
+	cryptoBuffer := bytes.NewBuffer(nil)
 
 	armorWriter, err := armor.Encode(cryptoBuffer, "Message", nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open armor writer: %v", err)
 	}
-
-	if armored {
-		cryptoWriter, err = openpgp.Encrypt(armorWriter, recipients, signer, nil, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open stream writer: %v", err)
-		}
-	} else {
-		cryptoWriter, err = openpgp.Encrypt(cryptoBuffer, recipients, signer, nil, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open stream writer: %v", err)
-		}
+	cryptoWriter, err := openpgp.Encrypt(armorWriter, recipients, signer, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open stream writer: %v", err)
 	}
-
 	if _, err = cryptoWriter.Write(plainBytes); err != nil {
 		return nil, fmt.Errorf("failed to write stream: %v", err)
 	}
 	if err = cryptoWriter.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close stream writer: %v", err)
+		return nil, fmt.Errorf("failed to close stream: %v", err)
 	}
 	if err = armorWriter.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close armor writer: %v", err)
+		return nil, fmt.Errorf("failed to armor stream: %v", err)
 	}
-
 	return cryptoBuffer.Bytes(), nil
 }
 
 // DecryptBytes decrypts and verifies a byte sequence
 func DecryptBytes(ring openpgp.EntityList, payload []byte) (plain []byte, err error) {
 	// Attempt to find and decode ASCII armor
-	var byteReader io.Reader = bytes.NewReader(payload)
+	var message *openpgp.MessageDetails
 
-	armoredBlock, err := armor.Decode(byteReader)
+	armoredBlock, err := armor.Decode(bytes.NewReader(payload))
 	if err != nil && err != io.EOF {
 		return nil, fmt.Errorf("failed to decode object: %v", err)
 	}
 
 	if armoredBlock != nil {
-		byteReader = armoredBlock.Body
-	}
-
-	message, err := openpgp.ReadMessage(byteReader, ring, CallbackForPassword, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read gpg message: %v", err)
+		message, err = openpgp.ReadMessage(armoredBlock.Body, ring, CallbackForPassword, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read armored gpg message: %v", err)
+		}
+	} else {
+		message, err = openpgp.ReadMessage(bytes.NewReader(payload), ring, CallbackForPassword, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read gpg message: %v", err)
+		}
 	}
 
 	bytes, err := ioutil.ReadAll(message.UnverifiedBody)
