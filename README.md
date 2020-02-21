@@ -9,7 +9,7 @@ Tresor uses a configuration file at `~/.tresor.yaml`. It looks like this:
 ```yaml
 bucket: gcs-bucket-name
 public_key: /path/to/armored/public/key.asc
-private_key: /path/to/armored/public/key.asc
+private_key: /path/to/armored/private/key.asc
 ascii_armor: true # Armored objects?
 object_signing: false # Signed objects?
 ```
