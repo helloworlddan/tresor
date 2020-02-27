@@ -9,7 +9,7 @@ import (
 )
 
 var cpCmd = &cobra.Command{
-	Use:   "rm",
+	Use:   "cp",
 	Short: "Copy a remote object to a new key.",
 	Long:  `Copy a remote object to a new key.`,
 	Run: func(cmd *cobra.Command, args []string) {
