@@ -71,8 +71,11 @@ var putCmd = &cobra.Command{
 			fail(err)
 		}
 
+		// Create metadata
+		meta := tresor.CreateMetadata(recipient, signer, filepath.Ext(localReadPath), viper.Get("ascii_armor").(bool))
+
 		// Write metadata
-		if err = tresor.WriteMetadata(viper.Get("bucket").(string), key, recipient, signer, filepath.Ext(localReadPath), viper.Get("ascii_armor").(bool)); err != nil {
+		if err = tresor.WriteMetadata(viper.Get("bucket").(string), key, meta); err != nil {
 			fail(err)
 		}
 	},
@@ -97,7 +100,7 @@ func readInput(localPath string, interactive bool, objectSigning bool) ([]byte, 
 			if string(plainBytes) == string(confirmBytes) {
 				return plainBytes, nil
 			}
-			fmt.Fprintln(os.Stderr, "Input does not match repetition.")
+			fmt.Fprintln(os.Stderr, "Inputs do not match.")
 		}
 	}
 	// Read from STDIN

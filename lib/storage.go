@@ -125,7 +125,7 @@ func WriteObject(bucketName string, key string, payload []byte) (err error) {
 }
 
 // WriteMetadata writes a set of tags on a remote object
-func WriteMetadata(bucketName string, key string, recipient *openpgp.Entity, signer *openpgp.Entity, extension string, armored bool) (err error) {
+func WriteMetadata(bucketName string, key string, meta storage.ObjectAttrsToUpdate) (err error) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -137,6 +137,14 @@ func WriteMetadata(bucketName string, key string, recipient *openpgp.Entity, sig
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
+	if _, err := object.Update(ctx, meta); err != nil {
+		return fmt.Errorf("failed to update metadata: %v", err)
+	}
+	return nil
+}
+
+// CreateMetadata create metadata to be stored along with GCS objects
+func CreateMetadata(recipient *openpgp.Entity, signer *openpgp.Entity, extension string, armored bool) storage.ObjectAttrsToUpdate {
 	signingKey := emptyMetadata
 
 	if signer != nil {
@@ -147,7 +155,7 @@ func WriteMetadata(bucketName string, key string, recipient *openpgp.Entity, sig
 		extension = emptyMetadata
 	}
 
-	metadataAttrs := storage.ObjectAttrsToUpdate{
+	return storage.ObjectAttrsToUpdate{
 		ContentType:     "application/pgp-encrypted",
 		ContentEncoding: "",
 		Metadata: map[string]string{
@@ -157,11 +165,6 @@ func WriteMetadata(bucketName string, key string, recipient *openpgp.Entity, sig
 			"ASCII-Armor":    strconv.FormatBool(armored),
 		},
 	}
-
-	if _, err := object.Update(ctx, metadataAttrs); err != nil {
-		return fmt.Errorf("failed to update metadata: %v", err)
-	}
-	return nil
 }
 
 // RemoveObject removes an object from remote storage
@@ -182,4 +185,42 @@ func RemoveObject(bucketName string, key string) (err error) {
 		return fmt.Errorf("failed to delete object: %v", err)
 	}
 	return nil
+}
+
+// CopyObject copies a remote object to a different remote key
+func CopyObject(bucketName string, sourceKey string, destinationKey string) (err error) {
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create storage client: %v", err)
+	}
+
+	bucket := client.Bucket(bucketName)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+
+	source := bucket.Object(sourceKey)
+	destination := bucket.Object(destinationKey)
+
+	if _, err := destination.CopierFrom(source).Run(ctx); err != nil {
+		return fmt.Errorf("failed copy remote objects: %v", err)
+	}
+	return nil
+}
+
+// CopyMetadata copies custom meta data from a remote object to another
+func CopyMetadata(bucketName string, sourceKey string, destinationKey string) error {
+	metadata, err := ReadMetadata(bucketName, sourceKey)
+	if err != nil {
+		return fmt.Errorf("failed to read metadata: %v", err)
+	}
+
+	metaUpdate := storage.ObjectAttrsToUpdate{
+		ContentType:     "application/pgp-encrypted",
+		ContentEncoding: "",
+		Metadata:        metadata.Metadata,
+	}
+
+	return WriteMetadata(bucketName, destinationKey, metaUpdate)
 }
