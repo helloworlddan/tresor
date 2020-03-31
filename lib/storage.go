@@ -19,7 +19,7 @@ const (
 )
 
 // QueryStorage queries the remote storage to find keys
-func QueryStorage(bucketName string, prefixFilter string) (attributes []*storage.ObjectAttrs, err error) {
+func QueryStorage(bucketName string, prefixFilter string, versions bool) (attributes []*storage.ObjectAttrs, err error) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -30,7 +30,7 @@ func QueryStorage(bucketName string, prefixFilter string) (attributes []*storage
 
 	var query *storage.Query
 	if prefixFilter != "" {
-		query = &storage.Query{Prefix: prefixFilter}
+		query = &storage.Query{Prefix: prefixFilter, Versions: versions}
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
@@ -53,7 +53,7 @@ func QueryStorage(bucketName string, prefixFilter string) (attributes []*storage
 }
 
 // ReadObject reads a remote object
-func ReadObject(bucketName string, key string) (payload []byte, err error) {
+func ReadObject(bucketName string, key string, version int64) (payload []byte, err error) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -66,6 +66,9 @@ func ReadObject(bucketName string, key string) (payload []byte, err error) {
 	defer cancel()
 
 	object := bucket.Object(key)
+	if version != 0 {
+		object = object.Generation(version)
+	}
 	reader, err := object.NewReader(ctx)
 	if err != nil {
 		return nil, err

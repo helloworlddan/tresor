@@ -19,7 +19,7 @@ var lsCmd = &cobra.Command{
 			prefixFilter = args[0]
 		}
 
-		attrs, err := tresor.QueryStorage(viper.Get("bucket").(string), prefixFilter)
+		attrs, err := tresor.QueryStorage(viper.Get("bucket").(string), prefixFilter, false)
 		if err != nil {
 			fail(err)
 		}

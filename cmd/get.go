@@ -10,7 +10,10 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
-var localWritePath string
+var (
+	localWritePath string
+	objectVersion  int64
+)
 
 var getCmd = &cobra.Command{
 	Use:   "get",
@@ -29,7 +32,7 @@ var getCmd = &cobra.Command{
 		}
 
 		// Read remote object
-		encryptedBytes, err := tresor.ReadObject(viper.Get("bucket").(string), key)
+		encryptedBytes, err := tresor.ReadObject(viper.Get("bucket").(string), key, objectVersion)
 		if err != nil {
 			fail(err)
 		}
@@ -55,4 +58,5 @@ var getCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(getCmd)
 	getCmd.Flags().StringVarP(&localWritePath, "out", "o", "", "Output file to write to.")
+	getCmd.Flags().Int64VarP(&objectVersion, "version", "v", 0, "Version of the object to get.")
 }

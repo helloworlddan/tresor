@@ -34,6 +34,22 @@ var infoCmd = &cobra.Command{
 		for k, v := range attrs.Metadata {
 			fmt.Printf("%v\t%v\n", k, v)
 		}
+
+		versions, err := tresor.QueryStorage(viper.Get("bucket").(string), key, true)
+		if err != nil {
+			fail(err)
+		}
+
+		if len(versions) > 1 {
+			// Reverse versions
+			for i, j := 0, len(versions)-1; i < j; i, j = i+1, j-1 {
+				versions[i], versions[j] = versions[j], versions[i]
+			}
+			fmt.Println()
+			for _, v := range versions {
+				fmt.Printf("Version\t\t%v\n- Modified\t%v\n", v.Generation, v.Updated.String())
+			}
+		}
 	},
 }
 
