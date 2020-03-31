@@ -30,7 +30,7 @@ jobs:
         ./node_modules/github-release-cli/bin/github-release upload --token "${GITHUB_TOKEN}" --owner helloworlddan --repo tresor --tag "linux-v${VERSION}" --name "tresor_linux64" --body "Current stable release for Linux 64-bit" tresor_linux64 tresor_linux64.sha256
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        VERSION: 1.0.1
+        VERSION: 1.1.0
 
   release-darwin-amd64:
     name: release darwin/amd64
@@ -58,7 +58,7 @@ jobs:
         ./node_modules/github-release-cli/bin/github-release upload --token "${GITHUB_TOKEN}" --owner helloworlddan --repo tresor --tag "darwin-v${VERSION}" --name "tresor_darwin64" --body "Current stable release for MacOS 64-bit" tresor_darwin64 tresor_darwin64.sha256
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        VERSION: 1.0.1
+        VERSION: 1.1.0
 
   release-windows-amd64:
     name: release windows/amd64
@@ -86,4 +86,4 @@ jobs:
         ./node_modules/github-release-cli/bin/github-release upload --token "${GITHUB_TOKEN}" --owner helloworlddan --repo tresor --tag "windows-v${VERSION}" --name "tresor.exe" --body "Current stable release for Windows 64-bit" tresor.exe tresor.exe.sha256
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        VERSION: 1.0.1
+        VERSION: 1.1.0
