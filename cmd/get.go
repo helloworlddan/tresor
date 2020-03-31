@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	tresor "github.com/helloworlddan/tresor/lib"
 	"github.com/spf13/cobra"
@@ -46,6 +47,7 @@ var getCmd = &cobra.Command{
 		// Dump to STDOUT if no file specified
 		if localWritePath == "" {
 			fmt.Printf("%s", string(plainBytes))
+			fmt.Fprintln(os.Stderr) // Print newline to STDERR to get prompt break right
 			return
 		}
 
