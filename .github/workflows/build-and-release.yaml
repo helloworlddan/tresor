@@ -28,7 +28,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
+        tag_name: linux-amd64-${{ github.ref }}
         release_name: tresor linux amd64 ${{ github.ref }}
         draft: false
         prerelease: false
@@ -75,7 +75,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
+        tag_name: linux-arm64-${{ github.ref }}
         release_name: tresor linux arm64 ${{ github.ref }}
         draft: false
         prerelease: false
@@ -122,7 +122,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
+        tag_name: darwin-amd64-${{ github.ref }}
         release_name: tresor darwin amd64 ${{ github.ref }}
         draft: false
         prerelease: false
@@ -169,7 +169,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
+        tag_name: windows-amd64-${{ github.ref }}
         release_name: tresor windows amd64 ${{ github.ref }}
         draft: false
         prerelease: false
