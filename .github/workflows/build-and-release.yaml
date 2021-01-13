@@ -32,6 +32,34 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         VERSION: 1.1.1
 
+  release-linux-aarch64:
+    name: release linux/aarch64
+    runs-on: ubuntu-latest
+    steps:
+    - name: setup go
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+    - name: checkout source
+      uses: actions/checkout@master
+    - name: get dependencies
+      run: |
+        npm install github-release-cli
+    - name: build
+      run: |
+        go build -v -o tresor_linux64a main.go
+        sha256sum tresor_linux64a > tresor_linux64a.sha256
+      env:
+        GOARCH: arm64
+        GOOS: linux
+        CGO_ENABLED: 0
+    - name: release
+      run: |
+        ./node_modules/github-release-cli/bin/github-release upload --token "${GITHUB_TOKEN}" --owner helloworlddan --repo tresor --tag "linux-v${VERSION}a" --name "tresor_linux64a" --body "Current stable release for Linux 64-bit ARM" tresor_linux64a tresor_linux64a.sha256
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION: 1.1.1
+
   release-darwin-amd64:
     name: release darwin/amd64
     runs-on: ubuntu-latest
