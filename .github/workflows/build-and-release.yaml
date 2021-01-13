@@ -4,8 +4,8 @@ on:
     - v*
 name: build and release
 jobs:
-  release-linux-amd64:
-    name: release linux/amd64
+  release:
+    name: tresor
     runs-on: ubuntu-latest
     steps:
     - name: setup go
@@ -14,7 +14,7 @@ jobs:
         go-version: 1.13
     - name: checkout source
       uses: actions/checkout@master
-    - name: build
+    - name: build linux amd64
       run: |
         go build -v -o tresor_linux_amd64 main.go
         sha256sum tresor_linux_amd64 > tresor_linux_amd64.sha256
@@ -22,46 +22,7 @@ jobs:
         GOARCH: amd64
         GOOS: linux
         CGO_ENABLED: 0
-    - name: create release
-      id: release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: linux-amd64-${{ github.ref }}
-        release_name: tresor linux amd64 ${{ github.ref }}
-        draft: false
-        prerelease: false
-    - name: upload binary asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: ./tresor_linux_amd64
-        asset_name: tresor_linux_amd64
-        asset_content_type: application/octet-stream
-    - name: upload binary checksum
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: ./tresor_linux_amd64.sha256
-        asset_name: tresor_darwin_amd64.sha256
-        asset_content_type: text/plain
-
-  release-linux-arm64:
-    name: release linux/arm64
-    runs-on: ubuntu-latest
-    steps:
-    - name: setup go
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.13
-    - name: checkout source
-      uses: actions/checkout@master
-    - name: build
+    - name: build linux arm64
       run: |
         go build -v -o tresor_linux_arm64 main.go
         sha256sum tresor_linux_arm64 > tresor_linux_arm64.sha256
@@ -69,46 +30,7 @@ jobs:
         GOARCH: arm64
         GOOS: linux
         CGO_ENABLED: 0
-    - name: create release
-      id: release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: linux-arm64-${{ github.ref }}
-        release_name: tresor linux arm64 ${{ github.ref }}
-        draft: false
-        prerelease: false
-    - name: upload binary asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: ./tresor_linux_arm64
-        asset_name: tresor_linux_arm64
-        asset_content_type: application/octet-stream
-    - name: upload binary checksum
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: ./tresor_linux_arm64.sha256
-        asset_name: tresor_darwin_arm64.sha256
-        asset_content_type: text/plain
-
-  release-darwin-amd64:
-    name: release darwin/amd64
-    runs-on: ubuntu-latest
-    steps:
-    - name: setup go
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.13
-    - name: checkout source
-      uses: actions/checkout@master
-    - name: build
+    - name: build darwin amd64
       run: |
         go build -v -o tresor_darwin_amd64 main.go
         sha256sum tresor_darwin_amd64 > tresor_darwin_amd64.sha256
@@ -116,46 +38,7 @@ jobs:
         GOARCH: amd64
         GOOS: darwin
         CGO_ENABLED: 0
-    - name: create release
-      id: release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: darwin-amd64-${{ github.ref }}
-        release_name: tresor darwin amd64 ${{ github.ref }}
-        draft: false
-        prerelease: false
-    - name: upload binary asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: ./tresor_darwin_amd64
-        asset_name: tresor_darwin_amd64
-        asset_content_type: application/octet-stream
-    - name: upload binary checksum
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: ./tresor_darwin_amd64.sha256
-        asset_name: tresor_darwin_amd64.sha256
-        asset_content_type: text/plain
-
-  release-windows-amd64:
-    name: release windows/amd64
-    runs-on: ubuntu-latest
-    steps:
-    - name: setup go
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.13
-    - name: checkout source
-      uses: actions/checkout@master
-    - name: build
+    - name: build windows amd64
       run: |
         go build -v -o tresor_windows_amd64 main.go
         sha256sum tresor_windows_amd64 > tresor_windows_amd64.sha256
@@ -169,11 +52,66 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: windows-amd64-${{ github.ref }}
-        release_name: tresor windows amd64 ${{ github.ref }}
+        tag_name: ${{ github.ref }}
+        release_name: tresor-${{ github.ref }}
         draft: false
         prerelease: false
-    - name: upload binary asset
+    - name: upload binary asset linux amd64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: ./tresor_linux_amd64
+        asset_name: tresor_linux_amd64
+        asset_content_type: application/octet-stream
+    - name: upload binary checksum linux amd64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: ./tresor_linux_amd64.sha256
+        asset_name: tresor_linux_amd64.sha256
+        asset_content_type: text/plain
+    - name: upload binary asset linux arm64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: ./tresor_linux_arm64
+        asset_name: tresor_linux_arm64
+        asset_content_type: application/octet-stream
+    - name: upload binary checksum linux arm64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: ./tresor_linux_arm64.sha256
+        asset_name: tresor_linux_arm64.sha256
+        asset_content_type: text/plain
+
+    - name: upload binary asset darwin amd64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: ./tresor_darwin_amd64
+        asset_name: tresor_darwin_amd64
+        asset_content_type: application/octet-stream
+    - name: upload binary checksum darwin amd64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: ./tresor_darwin_amd64.sha256
+        asset_name: tresor_darwin_amd64.sha256
+        asset_content_type: text/plain
+    - name: upload binary asset windows amd64
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -182,7 +120,7 @@ jobs:
         asset_path: ./tresor_windows_amd64
         asset_name: tresor_windows_amd64
         asset_content_type: application/octet-stream
-    - name: upload binary checksum
+    - name: upload binary checksum windows amd64
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
